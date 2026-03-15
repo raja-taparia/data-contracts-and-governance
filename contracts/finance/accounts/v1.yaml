@@ -1,0 +1,164 @@
+# Data Contract for Accounts Dimension
+# Producer: Finance Domain Team
+# Last Updated: 2026-01-02
+
+version: 1.0
+name: dim_accounts
+domain: finance
+description: "Master account dimension table. Contains all active and inactive customer accounts."
+
+owner:
+  name: "Finance Data Team"
+  email: "finance-data@company.com"
+  slack: "#finance-data"
+
+slos:
+  freshness:
+    max_age_hours: 24
+    description: "Data should be updated daily by 06:00 UTC"
+
+  completeness:
+    min_coverage: 0.99
+    description: "At least 99% of active accounts must have records"
+
+  accuracy:
+    method: "Reconciliation to GL (General Ledger)"
+    tolerance: "± 0.01%"
+    frequency: "Daily"
+
+  availability:
+    target_uptime: 0.999
+    description: "Table should be queryable 99.9% of the time"
+
+schema:
+  type: object
+  properties:
+    account_id:
+      type: string
+      description: "Unique account identifier in format ACC_XXXXXX"
+      required: true
+      example: "ACC_123456"
+      tests:
+        - unique
+        - not_null
+    
+    account_name:
+      type: string
+      description: "Customer-facing account name"
+      required: true
+      max_length: 255
+      tests:
+        - not_null
+    
+    account_type:
+      type: string
+      description: "Type of account: CHECKING, SAVINGS, CREDIT, INVESTMENT"
+      required: true
+      enum: ["CHECKING", "SAVINGS", "CREDIT", "INVESTMENT"]
+      tests:
+        - not_null
+        - in: ["CHECKING", "SAVINGS", "CREDIT", "INVESTMENT"]
+    
+    account_status:
+      type: string
+      description: "Current status: ACTIVE, CLOSED, SUSPENDED, DORMANT"
+      required: true
+      enum: ["ACTIVE", "CLOSED", "SUSPENDED", "DORMANT"]
+      tests:
+        - not_null
+    
+    customer_id:
+      type: string
+      description: "Foreign key to dim_customers table (semantic lineage)"
+      required: true
+      tests:
+        - relationships: {to: "dim_customers", field: "customer_id"}
+    
+    balance_usd:
+      type: decimal(18,2)
+      description: "Current account balance in USD. Null if account closed."
+      required: false
+      tests:
+        - dbt_expectations.expect_column_values_to_be_of_type: ['decimal']
+    
+    currency_code:
+      type: string
+      description: "ISO 4217 currency code (e.g., USD, EUR, CHF)"
+      required: true
+      length: 3
+      tests:
+        - not_null
+    
+    last_transaction_date:
+      type: date
+      description: "Date of most recent transaction on this account"
+      required: false
+    
+    opened_date:
+      type: date
+      description: "Date account was opened"
+      required: true
+      tests:
+        - not_null
+    
+    closed_date:
+      type: date
+      description: "Date account was closed, NULL if active"
+      required: false
+
+partitioning:
+  column: "account_id"
+  method: "hash"
+
+retention:
+  period_days: 2555  # 7 years for regulatory
+  archived_location: "s3://company-archive/finance/accounts/"
+
+lineage:
+  sources:
+    - core_banking.accounts (daily @ 05:00 UTC)
+    - core_banking.customers (reference)
+  transformations:
+    - Standardize account types
+    - Convert balances to USD using daily FX rates
+    - Flag dormant accounts (no activity > 90 days)
+
+deprecation_policy:
+  breaking_changes:
+    - Removing a column requires 90 days notice
+    - Changing a column type requires 60 days notice
+    - Changing enum values requires 30 days notice
+    - notification_method: "Email to all consumers (from data catalog)"
+  
+  example:
+    deprecated_column: "legacy_account_code"
+    removal_date: "2026-04-01"
+    replacement: "Use account_id instead"
+
+breaking_change_history:
+  - date: "2025-06-15"
+    change: "Added 'account_type' column"
+    impact: "Non-breaking (new column, optional)"
+  - date: "2025-03-01"
+    change: "Changed 'balance' type from DECIMAL(15,2) to DECIMAL(18,2)"
+    impact: "Non-breaking (only increased precision)"
+
+consumer_guidance:
+  recommended_use_cases:
+    - Account-level analytics and reporting
+    - Customer 360 views
+    - Risk and compliance reporting
+  
+  not_recommended_for:
+    - Real-time transaction processing (use transactional DB instead)
+    - Account balance updates (update latency is daily)
+  
+  common_joins:
+    - "JOIN dim_customers ON dim_accounts.customer_id = dim_customers.customer_id"
+    - "JOIN fct_daily_balances ON dim_accounts.account_id = fct_daily_balances.account_id"
+
+tags:
+  - critical
+  - pii: "customer_id"  # Contains PII
+  - sla: "99.9%"
+  - regulatory_domain: "finance"

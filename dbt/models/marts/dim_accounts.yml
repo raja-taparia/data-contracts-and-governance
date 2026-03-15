@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: dim_accounts
+    description: "Master account dimension table. Implements the data contract from contracts/finance/accounts/v1.yaml."
+    meta:
+      contract: "finance/accounts/v1"
+      owner: "Finance Data Team"
+      slo_freshness_hours: 24
+      slo_completeness: 0.99
+      critical: true
+      pii_flag: true
+    config:
+      materialized: table
+      tags:
+        - critical
+        - pii
+    columns:
+      - name: account_id
+        description: "Unique account identifier in format ACC_XXXXXX"
+        tests:
+          - unique
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "RLIKE '^ACC_[0-9]{6}$'"
+      - name: account_name
+        description: "Customer-facing account name"
+        tests:
+          - not_null
+      - name: account_type
+        description: "Type of account: CHECKING, SAVINGS, CREDIT, INVESTMENT"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["CHECKING", "SAVINGS", "CREDIT", "INVESTMENT"]
+      - name: account_status
+        description: "Current status: ACTIVE, CLOSED, SUSPENDED, DORMANT"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["ACTIVE", "CLOSED", "SUSPENDED", "DORMANT"]
+      - name: customer_id
+        description: "Foreign key to dim_customers table"
+        tests:
+          - not_null
+      - name: balance_usd
+        description: "Current account balance in USD"
+      - name: currency_code
+        description: "ISO 4217 currency code (e.g., USD, EUR, CHF)"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "RLIKE '^[A-Z]{3}$'"
+      - name: last_transaction_date
+        description: "Date of most recent transaction"
+      - name: opened_date
+        description: "Date account was opened"
+        tests:
+          - not_null
+      - name: closed_date
+        description: "Date account was closed (NULL if active)"

@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+.DS_Store
+.idea/
+.vscode/
+*.egg-info/
+*.egg
+dbt/.dbt/
+
+# dbt
+dbt/profiles.yml
+profiles.yml
+dbt/dbt_packages/
+dbt/target/
+dbt/logs/
+
+# Logs
+logs/
+*.log

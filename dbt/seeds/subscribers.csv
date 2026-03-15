@@ -1,0 +1,4 @@
+subscriber_id,subscriber_name,subscriber_type,subscriber_contact
+sub_c8b7a6f,finance-dashboard,Tableau,finance-analytics@example.com
+sub_b7a6f5e,risk-model,SageMaker,risk-management@example.com
+sub_a6f5e4d,customer-360-app,Application,product-engineering@example.com

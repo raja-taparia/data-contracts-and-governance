@@ -1,0 +1,92 @@
+# This is an example profiles.yml file.
+# Copy this file to profiles.yml and replace the placeholder values with your own.
+# For production use, it is recommended to use environment variables for secrets.
+
+data_contracts_governance:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog: dbt
+      schema: analytics
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      token: "{{ env_var('DATABRICKS_TOKEN') }}"
+      threads: 1
+      connect_timeout: 30
+
+# ============================================================================
+# GOVERNANCE SYSTEM CONFIGURATION
+# ============================================================================
+
+secrets:
+  databricks_host: "{{ env_var('DATABRICKS_HOST', 'https://<your-workspace>.cloud.databricks.com') }}"
+  databricks_http_path: "{{ env_var('DATABRICKS_HTTP_PATH', '/sql/1.0/warehouses/<your-warehouse-id>') }}"
+  databricks_token: "{{ env_var('DATABRICKS_TOKEN', '<your-pat-token>') }}"
+
+registry_config:
+  catalog: "{{ env_var('REGISTRY_CATALOG', 'dbt') }}"
+  database: "{{ env_var('REGISTRY_DB', 'governance') }}"
+  retention_days: 7
+  retention_enabled: true
+  tables:
+    contracts: "contracts"
+    models: "models"
+    columns: "columns"
+    tests: "tests"
+    test_results: "test_results"
+    publishers: "publishers"
+    subscribers: "subscribers"
+    slo_metrics: "slo_metrics"
+    data_quality_log: "data_quality_log"
+
+validation_config:
+  validator_frequency: "daily"
+  validator_start_hour: 8
+  enable_slo_validation: true
+  enable_data_quality_validation: true
+  enable_contract_validation: true
+  enable_schema_drift_detection: true
+  default_slo_thresholds:
+    freshness_hours: 24
+    completeness_percentage: 99
+    availability_percentage: 99.9
+  enable_null_spike_detection: true
+  null_spike_threshold_percentage: 10
+  enable_outlier_detection: true
+  custom_slo_queries_dir: "contracts/slo_queries"
+
+notification_config:
+  enable_flag_storage: true
+  enable_webhooks: false
+  webhook_url: ""
+  webhook_timeout_seconds: 10
+  webhook_retry_attempts: 3
+  notify_on_flag_change: true
+  notify_on_slo_breach: true
+  notify_on_test_failure: false
+  default_notification_channels:
+    - email
+    - slack
+
+logging_config:
+  log_level: "INFO"
+  log_to_console: true
+  log_to_file: true
+  log_file_path: "logs/governance.log"
+  log_retention_days: 30
+  enable_audit_trail: true
+
+contract_sources:
+  base_path: "contracts"
+  patterns:
+    - "**/*.yaml"
+    - "**/*.yml"
+
+dbt_config:
+  dbt_project_dir: "dbt"
+  models_dir: "dbt/models"
+  macros_dir: "dbt/macros"
+  test_results_file: "dbt/target/run_results.json"
+  enable_post_test_hook: true
+  post_hook_script: "scripts/log_test_results.py"

@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_accounts
+    description: "Staging model for accounts source data (seeded)."
+    columns:
+      - name: account_id
+        description: "Unique account identifier"
+        tests:
+          - not_null
+          - unique
+      - name: account_name
+        description: "Customer-facing account name"
+        tests:
+          - not_null
+      - name: account_type
+        description: "Account type"
+        tests:
+          - not_null
+      - name: account_status
+        description: "Account status"
+        tests:
+          - not_null
+      - name: customer_id
+        description: "Foreign key to customer dimension"
+        tests:
+          - not_null

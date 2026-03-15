@@ -1,0 +1,4 @@
+slo_id,contract_id,metric_name,metric_value,metric_timestamp
+slo_a5f4e3d,finance/dim_accounts,freshness,23.5,2023-10-26T10:00:00Z
+slo_b6a5f4e,finance/dim_accounts,completeness,0.998,2023-10-26T10:00:00Z
+slo_c7b6a5f,finance/dim_accounts,accuracy,0.999,2023-10-26T10:00:00Z

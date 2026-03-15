@@ -1,0 +1,22 @@
+name: data_contracts_governance
+version: '1.0'
+config-version: 2
+
+profile: data_contracts_governance
+
+model-paths: ["models"]
+#seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+macro-paths: ["macros"]
+
+#seeds:
+#  data_contracts_governance:
+#    +schema: governance
+
+models:
+  data_contracts_governance:
+    +materialized: table
+    staging:
+      +tags: ["staging"]
+    marts:
+      +tags: ["marts"]
